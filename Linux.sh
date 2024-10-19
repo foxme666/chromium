@@ -10,31 +10,34 @@ sleep 3
 # 检查 Docker 是否已安装
 if ! command -v docker &> /dev/null; then
     echo "Docker 未安装，正在安装..."
-    
+
     # 更新系统
-    sudo apt update -y && sudo apt upgrade -y
-    
+    sudo yum update -y
+
     # 移除旧版本
-    for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
-        sudo apt-get remove -y $pkg
-    done
+    sudo yum remove -y docker \
+        docker-client \
+        docker-client-latest \
+        docker-common \
+        docker-latest \
+        docker-latest-logrotate \
+        docker-logrotate \
+        docker-engine
 
     # 安装必要的包
-    sudo apt-get update
-    sudo apt-get install -y ca-certificates curl gnupg
-    sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    sudo yum install -y yum-utils \
+        device-mapper-persistent-data \
+        lvm2
 
     # 添加 Docker 的源
-    echo \
-      "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-    # 再次更新并安装 Docker
-    sudo apt update -y && sudo apt upgrade -y
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    # 安装 Docker
+    sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    # 启动 Docker 并设置开机自启
+    sudo systemctl start docker
+    sudo systemctl enable docker
 
     # 检查 Docker 版本
     docker --version
